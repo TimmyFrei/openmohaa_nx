@@ -1,0 +1,50 @@
+name: Build Nintendo Switch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-switch:
+    runs-on: ubuntu-latest
+
+    container:
+      image: devkitpro/devkita64:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show environment
+        run: |
+          echo "DEVKITPRO=$DEVKITPRO"
+          echo "DEVKITA64=$DEVKITA64"
+          which cmake || true
+          which make || true
+          which pacman || true
+
+      - name: Configure
+        run: |
+          cmake -S nx -B build \
+            -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake \
+            -DNX_TARGET_GAME=0 \
+            -DNX_RENDERER=gl1 \
+            -DNX_ENABLE_NXLINK=OFF \
+            -DNX_USE_CODEC_MAD=ON
+
+      - name: Build
+        run: |
+          cmake --build build --parallel 2
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p artifact
+          cp build/openmohaa.nro artifact/openmohaa.nro
+
+      - name: Upload NRO
+        uses: actions/upload-artifact@v4
+        with:
+          name: openmohaa-switch-allied-assault
+          path: artifact/
