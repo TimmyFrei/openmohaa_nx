@@ -27,12 +27,12 @@ jobs:
 
       - name: Configure
         run: |
-          cmake -S nx -B build \
-            -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake \
-            -DNX_TARGET_GAME=0 \
-            -DNX_RENDERER=gl1 \
-            -DNX_ENABLE_NXLINK=OFF \
-            -DNX_USE_CODEC_MAD=ON
+         cmake -S nx -B build \
+          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/devkita64-libnx.cmake \
+          -DNX_TARGET_GAME=0 \
+          -DNX_RENDERER=gl1 \
+          -DNX_ENABLE_NXLINK=OFF \
+          -DNX_USE_CODEC_MAD=ON
 
       - name: Build
         run: |
