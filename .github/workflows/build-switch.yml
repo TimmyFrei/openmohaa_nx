@@ -11,18 +11,19 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: devkitpro/devkita64
+      image: devkitpro/devkita64:latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Show environment
         run: |
-          pacman -Sy --noconfirm \
-            cmake \
-            make \
-            git
+          echo "DEVKITPRO=$DEVKITPRO"
+          echo "DEVKITA64=$DEVKITA64"
+          which cmake || true
+          which make || true
+          which pacman || true
 
       - name: Configure
         run: |
@@ -41,7 +42,6 @@ jobs:
         run: |
           mkdir -p artifact
           cp build/openmohaa.nro artifact/openmohaa.nro
-          cp -r nx/romfs artifact/romfs
 
       - name: Upload NRO
         uses: actions/upload-artifact@v4
