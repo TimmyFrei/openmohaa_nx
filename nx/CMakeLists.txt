@@ -50,7 +50,8 @@ option(NX_USE_CODEC_MAD
 # -----------------------------------------------------------------------------
 
 set(NX_TARGET_GAME "0" CACHE STRING
-    "OpenMoHAA game: 0=Allied Assault, 1=Spearhead, 2=Breakthrough")
+    "OpenMoHAA game: 0=Allied Assault, 1=Spearhead, 2=Breakthrough"
+)
 
 set_property(
     CACHE NX_TARGET_GAME
@@ -85,26 +86,80 @@ find_package(SDL2 REQUIRED)
 
 find_package(OpenAL REQUIRED)
 
-find_package(Vorbis REQUIRED)
-find_package(VorbisFile REQUIRED)
-find_package(Ogg REQUIRED)
-
-find_package(Opus REQUIRED)
-find_package(OpusFile REQUIRED)
-
 find_package(Mad)
 
 find_package(ZLIB REQUIRED)
 
 find_package(EGL REQUIRED)
 
+# -----------------------------------------------------------------------------
+# Internal codec libraries
+#
+# OpenMoHAA normally uses its bundled copies of these libraries.
+# Do NOT use find_package(Vorbis/Ogg/Opus) here: the Switch container
+# does not provide CMake package configuration files for them.
+# -----------------------------------------------------------------------------
+
+set(THIRDPARTY_DIR
+    "${OPENMOHAA_ROOT}/code/thirdparty"
+)
+
+# Ogg
+file(GLOB_RECURSE OGG_SOURCES
+    "${THIRDPARTY_DIR}/libogg-*/*.c"
+)
+
+# Vorbis
+file(GLOB_RECURSE VORBIS_SOURCES
+    "${THIRDPARTY_DIR}/libvorbis-*/*.c"
+)
+
+# Opus
+file(GLOB_RECURSE OPUS_SOURCES
+    "${THIRDPARTY_DIR}/opus-*/*.c"
+)
+
+# OpusFile, if present
+file(GLOB_RECURSE OPUSFILE_SOURCES
+    "${THIRDPARTY_DIR}/opusfile-*/*.c"
+)
+
+# Codec include directories
+file(GLOB OGG_INCLUDE_DIRS
+    "${THIRDPARTY_DIR}/libogg-*/include"
+)
+
+file(GLOB VORBIS_INCLUDE_DIRS
+    "${THIRDPARTY_DIR}/libvorbis-*/include"
+)
+
+file(GLOB OPUS_INCLUDE_DIRS
+    "${THIRDPARTY_DIR}/opus-*/include"
+)
+
+file(GLOB OPUSFILE_INCLUDE_DIRS
+    "${THIRDPARTY_DIR}/opusfile-*/include"
+)
+
+include_directories(
+    ${OGG_INCLUDE_DIRS}
+    ${VORBIS_INCLUDE_DIRS}
+    ${OPUS_INCLUDE_DIRS}
+    ${OPUSFILE_INCLUDE_DIRS}
+)
+
+# -----------------------------------------------------------------------------
 # Nintendo Switch GL / Nouveau libraries
-find_library(GLAPI_LIBRARY
+# -----------------------------------------------------------------------------
+
+find_library(
+    GLAPI_LIBRARY
     NAMES glapi
     REQUIRED
 )
 
-find_library(DRM_NOUVEAU_LIBRARY
+find_library(
+    DRM_NOUVEAU_LIBRARY
     NAMES drm_nouveau
     REQUIRED
 )
@@ -240,6 +295,11 @@ add_executable(
     ${CLIENT_SOURCES}
     ${RENDERER_SOURCES}
     ${SYSTEM_SOURCES}
+
+    ${OGG_SOURCES}
+    ${VORBIS_SOURCES}
+    ${OPUS_SOURCES}
+    ${OPUSFILE_SOURCES}
 )
 
 # -----------------------------------------------------------------------------
@@ -300,13 +360,6 @@ target_link_libraries(
     ${SDL2_LIBRARIES}
 
     OpenAL::OpenAL
-
-    Vorbis::vorbis
-    Vorbis::vorbisfile
-    Ogg::ogg
-
-    Opus::opus
-    OpusFile::opusfile
 
     ZLIB::ZLIB
 
