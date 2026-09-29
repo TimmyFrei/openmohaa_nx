@@ -1,238 +1,503 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.18)
 
-project(openmohaa_nx LANGUAGES C CXX ASM)
+project(openmohaa_switch VERSION 0.83.0 LANGUAGES C CXX ASM)
+
+if(NOT PLATFORM_SWITCH)
+    message(FATAL_ERROR
+        "This project must be configured with the Switch toolchain:\n"
+        " -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/devkita64-libnx.cmake")
+endif()
+
+# =============================================================================
+# Paths & options
+# =============================================================================
+
+set(OPENMOHAA_ROOT "${_NX_DEFAULT_ROOT}" CACHE PATH
+    "Path to the upstream OpenMoHAA checkout")
+
+if(NOT EXISTS "${OPENMOHAA_ROOT}/code")
+    set(OPENMOHAA_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." CACHE PATH
+        "Path to the upstream OpenMoHAA checkout" FORCE)
+endif()
+
+set(SRC "${OPENMOHAA_ROOT}/code")
+set(NXSRC "${CMAKE_CURRENT_SOURCE_DIR}/source")
+set(NXINC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
+set(NX_RENDERER "gl1" CACHE STRING
+    "Renderer to statically link: gl1 or gl2")
+
+set_property(CACHE NX_RENDERER PROPERTY STRINGS gl1 gl2)
+
+# Nintendo Switch target game:
+#   0 = Allied Assault
+#   1 = Spearhead
+#   2 = Breakthrough
+set(NX_TARGET_GAME 0 CACHE STRING
+    "Nintendo Switch target game (0=Allied Assault, 1=Spearhead, 2=Breakthrough)")
+
+if(NOT NX_TARGET_GAME MATCHES "^[012]$")
+    message(FATAL_ERROR
+        "NX_TARGET_GAME must be 0, 1 or 2")
+endif()
+
+message(STATUS
+    "Nintendo Switch target game: ${NX_TARGET_GAME}")
+
+option(NX_ENABLE_NXLINK
+    "Enable nxlink support" OFF)
+
+option(NX_USE_CODEC_MAD
+    "Enable MP3/libmad support" ON)
+
+option(NX_HEAPGUARD
+    "Enable Switch heap guard" OFF)
+
+# =============================================================================
+# Compiler configuration
+# =============================================================================
 
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 17)
 
-# ------------------------------------------------------------
-# Nintendo Switch target game
-#
-# 0 = Allied Assault
-# 1 = Spearhead
-# 2 = Breakthrough
-# ------------------------------------------------------------
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(NX_TARGET_GAME 0 CACHE STRING "Nintendo Switch target game (0=AA, 1=Spearhead, 2=Breakthrough)")
-
-if(NOT NX_TARGET_GAME MATCHES "^[012]$")
-    message(FATAL_ERROR "NX_TARGET_GAME must be 0, 1 or 2")
-endif()
-
-message(STATUS "Nintendo Switch target game: ${NX_TARGET_GAME}")
-
-# ------------------------------------------------------------
-# Renderer
-# ------------------------------------------------------------
-
-set(NX_RENDERER "gl1" CACHE STRING "Nintendo Switch renderer")
-set_property(CACHE NX_RENDERER PROPERTY STRINGS gl1 gl2)
-
-# ------------------------------------------------------------
-# Options
-# ------------------------------------------------------------
-
-option(NX_ENABLE_NXLINK "Enable nxlink support" OFF)
-option(NX_USE_CODEC_MAD "Enable MP3/libmad support" ON)
-
-# ------------------------------------------------------------
-# Paths
-# ------------------------------------------------------------
-
-set(OPENMOHAA_ROOT "${CMAKE_CURRENT_LIST_DIR}/..")
-set(SOURCE_DIR "${OPENMOHAA_ROOT}/code")
-set(THIRDPARTY_DIR "${SOURCE_DIR}/thirdparty")
-
-# ------------------------------------------------------------
-# Switch definitions
-# ------------------------------------------------------------
+# The Switch platform header supplies the operating-system definitions
+# expected by the upstream OpenMoHAA sources.
+add_compile_options(
+    -include "${NXINC}/nx_platform.h"
+    -idirafter "${CMAKE_CURRENT_SOURCE_DIR}/compat"
+)
 
 add_compile_definitions(
     __SWITCH__
+    BOTLIB
+    APP_MODULE
+    _LINUX=1
     NX_TARGET_GAME=${NX_TARGET_GAME}
 )
 
-# ------------------------------------------------------------
-# Third-party libraries bundled with OpenMoHAA
-# ------------------------------------------------------------
-
-file(GLOB_RECURSE OGG_SOURCES
-    "${THIRDPARTY_DIR}/libogg-*/*.c"
-)
-
-file(GLOB_RECURSE VORBIS_SOURCES
-    "${THIRDPARTY_DIR}/libvorbis-*/*.c"
-)
-
-file(GLOB_RECURSE OPUS_SOURCES
-    "${THIRDPARTY_DIR}/opus-*/*.c"
-)
-
-file(GLOB_RECURSE OPUSFILE_SOURCES
-    "${THIRDPARTY_DIR}/opusfile-*/*.c"
-)
-
-file(GLOB_RECURSE MAD_SOURCES
-    "${THIRDPARTY_DIR}/libmad-*/*.c"
-)
-
-# ------------------------------------------------------------
+# =============================================================================
 # Include directories
-# ------------------------------------------------------------
+# =============================================================================
 
 include_directories(
-    "${SOURCE_DIR}"
-    "${SOURCE_DIR}/client"
-    "${SOURCE_DIR}/server"
-    "${SOURCE_DIR}/game"
-    "${SOURCE_DIR}/qcommon"
-    "${SOURCE_DIR}/script"
-    "${SOURCE_DIR}/renderercommon"
-
-    "${THIRDPARTY_DIR}/libogg-1.3.5/include"
-    "${THIRDPARTY_DIR}/libvorbis-1.3.7/include"
+    ${SRC}/qcommon
+    ${SRC}/script
+    ${SRC}/sys
+    ${SRC}/gamespy/common
+    ${SRC}/gamespy/gcdkey
+    ${NXINC}
 )
 
-# ------------------------------------------------------------
-# Main OpenMoHAA sources
-# ------------------------------------------------------------
-
-file(GLOB_RECURSE COMMON_SOURCES
-    "${SOURCE_DIR}/qcommon/*.c"
-    "${SOURCE_DIR}/qcommon/*.cpp"
-    "${SOURCE_DIR}/qcommon/*.h"
-
-    "${SOURCE_DIR}/script/*.c"
-    "${SOURCE_DIR}/script/*.cpp"
-    "${SOURCE_DIR}/script/*.h"
-
-    "${SOURCE_DIR}/client/*.c"
-    "${SOURCE_DIR}/client/*.cpp"
-    "${SOURCE_DIR}/client/*.h"
-
-    "${SOURCE_DIR}/renderercommon/*.c"
-    "${SOURCE_DIR}/renderercommon/*.cpp"
-    "${SOURCE_DIR}/renderercommon/*.h"
-
-    "${SOURCE_DIR}/sys/*.c"
-    "${SOURCE_DIR}/sys/*.cpp"
-    "${SOURCE_DIR}/sys/*.h"
+include_directories(
+    SYSTEM
+    "$ENV{DEVKITPRO}/portlibs/switch/include"
 )
 
-# ------------------------------------------------------------
-# Game sources
-# ------------------------------------------------------------
+# =============================================================================
+# Switch libraries
+# =============================================================================
 
-file(GLOB_RECURSE GAME_SOURCES
-    "${SOURCE_DIR}/fgame/*.c"
-    "${SOURCE_DIR}/fgame/*.cpp"
-    "${SOURCE_DIR}/fgame/*.h"
+find_library(NX_LIB_OPENAL
+    openal
+    PATHS "$ENV{DEVKITPRO}/portlibs/switch/lib"
+    NO_DEFAULT_PATH
 )
 
-# ------------------------------------------------------------
+find_library(NX_LIB_VORBIS
+    vorbis
+    PATHS "$ENV{DEVKITPRO}/portlibs/switch/lib"
+    NO_DEFAULT_PATH
+)
+
+find_library(NX_LIB_VORBISF
+    vorbisfile
+    PATHS "$ENV{DEVKITPRO}/portlibs/switch/lib"
+    NO_DEFAULT_PATH
+)
+
+find_library(NX_LIB_OGG
+    ogg
+    PATHS "$ENV{DEVKITPRO}/portlibs/switch/lib"
+    NO_DEFAULT_PATH
+)
+
+find_library(NX_LIB_OPUS
+    opus
+    PATHS "$ENV{DEVKITPRO}/portlibs/switch/lib"
+    NO_DEFAULT_PATH
+)
+
+find_library(NX_LIB_OPUSFILE
+    opusfile
+    PATHS "$ENV{DEVKITPRO}/portlibs/switch/lib"
+    NO_DEFAULT_PATH
+)
+
+find_library(NX_LIB_MAD
+    mad
+    PATHS "$ENV{DEVKITPRO}/portlibs/switch/lib"
+    NO_DEFAULT_PATH
+)
+
+find_library(NX_LIB_Z
+    z
+    PATHS "$ENV{DEVKITPRO}/portlibs/switch/lib"
+    NO_DEFAULT_PATH
+)
+
+find_library(NX_LIB_EGL
+    EGL
+    PATHS "$ENV{DEVKITPRO}/portlibs/switch/lib"
+    NO_DEFAULT_PATH
+)
+
+find_library(NX_LIB_GLAPI
+    glapi
+    PATHS "$ENV{DEVKITPRO}/portlibs/switch/lib"
+    NO_DEFAULT_PATH
+)
+
+find_library(NX_LIB_DRM_NOUV
+    drm_nouveau
+    PATHS "$ENV{DEVKITPRO}/portlibs/switch/lib"
+    NO_DEFAULT_PATH
+)
+
+foreach(_lib
+    NX_LIB_OPENAL
+    NX_LIB_VORBIS
+    NX_LIB_VORBISF
+    NX_LIB_OGG
+    NX_LIB_OPUS
+    NX_LIB_OPUSFILE
+    NX_LIB_Z
+    NX_LIB_EGL
+    NX_LIB_GLAPI
+    NX_LIB_DRM_NOUV
+)
+    if(NOT ${_lib})
+        message(FATAL_ERROR
+            "Required Switch library not found: ${_lib}")
+    endif()
+endforeach()
+
+if(NX_USE_CODEC_MAD AND NOT NX_LIB_MAD)
+    message(WARNING
+        "libmad was requested but could not be found. MP3 support may be unavailable.")
+endif()
+
+# =============================================================================
+# SDL2
+# =============================================================================
+
+find_package(SDL2 REQUIRED)
+
+# =============================================================================
+# Recast / Detour
+# =============================================================================
+
+set(RECAST_ROOT
+    "${SRC}/thirdparty/recastnavigation"
+)
+
+file(GLOB RECAST_SOURCES
+    "${RECAST_ROOT}/Recast/Source/*.cpp"
+)
+
+file(GLOB DETOUR_SOURCES
+    "${RECAST_ROOT}/Detour/Source/*.cpp"
+)
+
+file(GLOB DETOUR_CROWD_SOURCES
+    "${RECAST_ROOT}/DetourCrowd/Source/*.cpp"
+)
+
+add_library(Recast STATIC
+    ${RECAST_SOURCES}
+)
+
+target_include_directories(Recast PUBLIC
+    "${RECAST_ROOT}/Recast/Include"
+)
+
+add_library(Detour STATIC
+    ${DETOUR_SOURCES}
+)
+
+target_include_directories(Detour PUBLIC
+    "${RECAST_ROOT}/Detour/Include"
+)
+
+add_library(DetourCrowd STATIC
+    ${DETOUR_CROWD_SOURCES}
+)
+
+target_include_directories(DetourCrowd PUBLIC
+    "${RECAST_ROOT}/DetourCrowd/Include"
+    "${RECAST_ROOT}/Detour/Include"
+)
+
+# =============================================================================
+# JPEG
+# =============================================================================
+
+file(GLOB JPEG_SOURCES
+    "${SRC}/thirdparty/jpeg-9f/j*.c"
+)
+
+set_source_files_properties(
+    ${JPEG_SOURCES}
+    PROPERTIES
+    COMPILE_OPTIONS "-w"
+)
+
+# =============================================================================
+# GameSpy
+# =============================================================================
+
+set(GAMESPY_COMMON_SOURCES
+    ${SRC}/gamespy/common/gamespy_common.cpp
+)
+
+set(GAMESPY_GCDKEY_SOURCES
+    ${SRC}/gamespy/gcdkey/gcdkey.cpp
+)
+
+add_library(gcd_common STATIC
+    ${GAMESPY_COMMON_SOURCES}
+)
+
+target_include_directories(gcd_common PUBLIC
+    ${SRC}/gamespy/common
+)
+
+add_library(gcd_key STATIC
+    ${GAMESPY_GCDKEY_SOURCES}
+)
+
+target_include_directories(gcd_key PUBLIC
+    ${SRC}/gamespy/gcdkey
+    ${SRC}/gamespy/common
+)
+
+# =============================================================================
+# Common engine sources
+# =============================================================================
+
+set(COMMON_SOURCES
+
+    ${SRC}/qcommon/cm_trace.cpp
+    ${SRC}/qcommon/cm_world.cpp
+    ${SRC}/qcommon/common.cpp
+    ${SRC}/qcommon/cvar.cpp
+    ${SRC}/qcommon/files.cpp
+    ${SRC}/qcommon/md4.cpp
+    ${SRC}/qcommon/msg.cpp
+    ${SRC}/qcommon/net_chan.cpp
+    ${SRC}/qcommon/q_math.cpp
+    ${SRC}/qcommon/q_shared.cpp
+    ${SRC}/qcommon/qcommon.cpp
+    ${SRC}/qcommon/sv_ccmds.cpp
+    ${SRC}/qcommon/sv_client.cpp
+    ${SRC}/qcommon/sv_game.cpp
+    ${SRC}/qcommon/sv_init.cpp
+    ${SRC}/qcommon/sv_main.cpp
+    ${SRC}/qcommon/sv_net_chan.cpp
+    ${SRC}/qcommon/sv_snapshot.cpp
+    ${SRC}/qcommon/sv_world.cpp
+    ${SRC}/qcommon/usercmd.cpp
+
+    ${SRC}/script/script.cpp
+    ${SRC}/script/script_variable.cpp
+    ${SRC}/script/script_token.cpp
+    ${SRC}/script/script_thread.cpp
+    ${SRC}/script/script_threadlist.cpp
+    ${SRC}/script/script_class.cpp
+    ${SRC}/script/script_struct.cpp
+    ${SRC}/script/script_exception.cpp
+    ${SRC}/script/script_error.cpp
+
+    ${SRC}/sys/con_log.c
+    ${SRC}/sys/con_passive.c
+    ${SRC}/sys/sys_main.c
+    ${SRC}/sys/win_bounds.cpp
+    ${SRC}/sys/win_localization.cpp
+    ${SRC}/sys/sys_update_checker.cpp
+)
+
+# =============================================================================
+# Client sources
+# =============================================================================
+
+file(GLOB CLIENT_SOURCES
+    "${SRC}/client/*.cpp"
+    "${SRC}/client/*.c"
+)
+
+# =============================================================================
 # Renderer
-# ------------------------------------------------------------
+# =============================================================================
+
+file(GLOB RENDERER_COMMON_SOURCES
+    "${SRC}/renderercommon/*.cpp"
+    "${SRC}/renderercommon/*.c"
+)
 
 if(NX_RENDERER STREQUAL "gl1")
 
-    file(GLOB_RECURSE RENDERER_SOURCES
-        "${SOURCE_DIR}/renderer/*.c"
-        "${SOURCE_DIR}/renderer/*.cpp"
-        "${SOURCE_DIR}/renderer/*.h"
+    file(GLOB RENDERER_BACKEND_SOURCES
+        "${SRC}/renderer/*.cpp"
+        "${SRC}/renderer/*.c"
+    )
+
+    add_compile_definitions(
+        USE_RENDERER_GL1
     )
 
 elseif(NX_RENDERER STREQUAL "gl2")
 
-    file(GLOB_RECURSE RENDERER_SOURCES
-        "${SOURCE_DIR}/renderer/*.c"
-        "${SOURCE_DIR}/renderer/*.cpp"
-        "${SOURCE_DIR}/renderer/*.h"
+    file(GLOB RENDERER_BACKEND_SOURCES
+        "${SRC}/renderer/*.cpp"
+        "${SRC}/renderer/*.c"
+    )
+
+    add_compile_definitions(
+        USE_RENDERER_GL2
     )
 
 else()
 
     message(FATAL_ERROR
-        "Unsupported NX_RENDERER: ${NX_RENDERER}"
-    )
+        "Unsupported NX_RENDERER: ${NX_RENDERER}")
 
 endif()
 
-# ------------------------------------------------------------
-# Platform-specific Switch sources
-# ------------------------------------------------------------
-
-file(GLOB_RECURSE NX_PLATFORM_SOURCES
-    "${CMAKE_CURRENT_LIST_DIR}/*.c"
-    "${CMAKE_CURRENT_LIST_DIR}/*.cpp"
+set(RENDERER_SOURCES
+    ${RENDERER_COMMON_SOURCES}
+    ${RENDERER_BACKEND_SOURCES}
+    ${JPEG_SOURCES}
 )
 
-# Do not compile CMake files as sources
-list(FILTER NX_PLATFORM_SOURCES EXCLUDE REGEX "CMakeLists\\.txt$")
+# =============================================================================
+# Switch system sources
+# =============================================================================
 
-# ------------------------------------------------------------
-# SDL / OpenAL / Zlib
-#
-# Do NOT use find_package(Mad) or find_package(EGL).
-# The Switch toolchain does not provide those as desktop-style
-# CMake packages.
-# ------------------------------------------------------------
+set(SYSTEM_SOURCES
 
-find_package(SDL2 REQUIRED)
-find_package(OpenAL REQUIRED)
-find_package(ZLIB REQUIRED)
+    ${SRC}/sys/con_log.c
+    ${SRC}/sys/con_passive.c
+    ${SRC}/sys/sys_main.c
+    ${SRC}/sys/win_bounds.cpp
+    ${SRC}/sys/win_localization.cpp
 
-# ------------------------------------------------------------
-# Executable
-# ------------------------------------------------------------
+    ${NXSRC}/nx_app.c
+    ${NXSRC}/sys_nx.c
+    ${NXSRC}/sys_nx_new.c
+    ${NXSRC}/sys_nx_modules.c
+    ${NXSRC}/nx_compat.c
+    ${NXSRC}/nx_heapguard.cpp
 
-add_executable(openmohaa
-    ${COMMON_SOURCES}
+    ${SRC}/sys/sys_update_checker.cpp
+)
+
+# =============================================================================
+# Static game / cgame modules
+# =============================================================================
+
+file(GLOB GAME_SOURCES
+    "${SRC}/fgame/*.cpp"
+    "${SRC}/fgame/*.c"
+)
+
+file(GLOB CGAME_SOURCES
+    "${SRC}/cgame/*.cpp"
+    "${SRC}/cgame/*.c"
+)
+
+add_library(game_static STATIC
     ${GAME_SOURCES}
-    ${RENDERER_SOURCES}
-    ${NX_PLATFORM_SOURCES}
-
-    ${OGG_SOURCES}
-    ${VORBIS_SOURCES}
-    ${OPUS_SOURCES}
-    ${OPUSFILE_SOURCES}
-
-    ${MAD_SOURCES}
 )
 
-# ------------------------------------------------------------
-# Include directories from Switch libraries
-# ------------------------------------------------------------
-
-target_include_directories(openmohaa PRIVATE
-
-    "${SOURCE_DIR}"
-
-    "${SOURCE_DIR}/client"
-    "${SOURCE_DIR}/server"
-    "${SOURCE_DIR}/game"
-    "${SOURCE_DIR}/qcommon"
-    "${SOURCE_DIR}/script"
-    "${SOURCE_DIR}/renderercommon"
-
-    "${THIRDPARTY_DIR}/libogg-1.3.5/include"
-    "${THIRDPARTY_DIR}/libvorbis-1.3.7/include"
-
+target_include_directories(game_static PRIVATE
+    ${SRC}
+    ${SRC}/qcommon
+    ${SRC}/fgame
+    ${SRC}/script
 )
 
-# ------------------------------------------------------------
-# Compile definitions
-# ------------------------------------------------------------
-
-target_compile_definitions(openmohaa PRIVATE
+target_compile_definitions(game_static PRIVATE
     __SWITCH__
+    BOTLIB
+    APP_MODULE
+    _LINUX=1
     NX_TARGET_GAME=${NX_TARGET_GAME}
 )
 
-if(NX_RENDERER STREQUAL "gl1")
-    target_compile_definitions(openmohaa PRIVATE
-        USE_RENDERER_GL1
-    )
-endif()
+add_library(cgame_static STATIC
+    ${CGAME_SOURCES}
+)
+
+target_include_directories(cgame_static PRIVATE
+    ${SRC}
+    ${SRC}/qcommon
+    ${SRC}/cgame
+    ${SRC}/script
+)
+
+target_compile_definitions(cgame_static PRIVATE
+    __SWITCH__
+    BOTLIB
+    APP_MODULE
+    _LINUX=1
+    NX_TARGET_GAME=${NX_TARGET_GAME}
+)
+
+# =============================================================================
+# Main executable
+# =============================================================================
+
+add_executable(openmohaa
+
+    ${COMMON_SOURCES}
+    ${CLIENT_SOURCES}
+    ${SYSTEM_SOURCES}
+    ${RENDERER_SOURCES}
+)
+
+target_include_directories(openmohaa PRIVATE
+
+    ${SRC}
+    ${SRC}/qcommon
+    ${SRC}/script
+    ${SRC}/sys
+    ${SRC}/client
+    ${SRC}/renderer
+    ${SRC}/renderercommon
+
+    ${SRC}/gamespy/common
+    ${SRC}/gamespy/gcdkey
+
+    ${NXSRC}
+    ${NXINC}
+
+    "$ENV{DEVKITPRO}/portlibs/switch/include"
+)
+
+# =============================================================================
+# Compile definitions
+# =============================================================================
+
+target_compile_definitions(openmohaa PRIVATE
+
+    __SWITCH__
+    BOTLIB
+    APP_MODULE
+    _LINUX=1
+
+    NX_TARGET_GAME=${NX_TARGET_GAME}
+)
 
 if(NX_USE_CODEC_MAD)
     target_compile_definitions(openmohaa PRIVATE
@@ -240,48 +505,68 @@ if(NX_USE_CODEC_MAD)
     )
 endif()
 
-# ------------------------------------------------------------
-# Switch libraries
-# ------------------------------------------------------------
-
-target_link_libraries(openmohaa PRIVATE
-
-    SDL2::SDL2
-    OpenAL::OpenAL
-
-    ZLIB::ZLIB
-
-    EGL
-    glapi
-
-    nx
-    drm_nouveau
-
-    m
-)
-
-# ------------------------------------------------------------
-# nxlink
-# ------------------------------------------------------------
-
 if(NX_ENABLE_NXLINK)
     target_compile_definitions(openmohaa PRIVATE
         USE_NXLINK
     )
 endif()
 
-# ------------------------------------------------------------
-# Switch executable properties
-# ------------------------------------------------------------
+if(NX_HEAPGUARD)
+    target_compile_definitions(openmohaa PRIVATE
+        NX_HEAPGUARD
+    )
+endif()
 
-set_target_properties(openmohaa PROPERTIES
-    OUTPUT_NAME "openmohaa"
-    SUFFIX ".nro"
+# =============================================================================
+# Link
+# =============================================================================
+
+target_link_libraries(openmohaa PRIVATE
+
+    -Wl,--start-group
+
+    gcd_key
+    gcd_common
+
+    Detour
+    DetourCrowd
+    Recast
+
+    game_static
+    cgame_static
+
+    -Wl,--end-group
+
+    SDL2::SDL2
+
+    ${NX_LIB_OPENAL}
+
+    ${NX_LIB_VORBISF}
+    ${NX_LIB_VORBIS}
+    ${NX_LIB_OGG}
+
+    ${NX_LIB_OPUSFILE}
+    ${NX_LIB_OPUS}
+
+    ${NX_LIB_Z}
+
+    ${NX_LIB_EGL}
+    ${NX_LIB_GLAPI}
+    ${NX_LIB_DRM_NOUVEAU}
+
+    nx
+    m
 )
 
-# ------------------------------------------------------------
-# Compiler options
-# ------------------------------------------------------------
+if(NX_USE_CODEC_MAD AND NX_LIB_MAD)
+    target_link_libraries(openmohaa PRIVATE
+        ${NX_LIB_MAD}
+    )
+endif()
+
+# =============================================================================
+# Compiler / linker flags
+# =============================================================================
 
 target_compile_options(openmohaa PRIVATE
     -ffunction-sections
@@ -292,9 +577,47 @@ target_link_options(openmohaa PRIVATE
     -Wl,--gc-sections
 )
 
-# ------------------------------------------------------------
+# =============================================================================
+# NRO packaging
+# =============================================================================
+
+set(OPENMOHAA_ELF
+    "${CMAKE_CURRENT_BINARY_DIR}/openmohaa.elf"
+)
+
+set(OPENMOHAA_NRO
+    "${CMAKE_CURRENT_BINARY_DIR}/openmohaa.nro"
+)
+
+set_target_properties(openmohaa PROPERTIES
+    OUTPUT_NAME "openmohaa"
+)
+
+add_custom_command(
+    TARGET openmohaa
+    POST_BUILD
+
+    COMMAND
+        ${CMAKE_OBJCOPY}
+        -O binary
+        "$<TARGET_FILE:openmohaa>"
+        "${OPENMOHAA_ELF}"
+
+    COMMAND
+        elf2nro
+        "${OPENMOHAA_ELF}"
+        "${OPENMOHAA_NRO}"
+
+    BYPRODUCTS
+        "${OPENMOHAA_NRO}"
+
+    COMMENT
+        "Packaging openmohaa.elf into openmohaa.nro"
+)
+
+# =============================================================================
 # Status
-# ------------------------------------------------------------
+# =============================================================================
 
 message(STATUS "")
 message(STATUS "OpenMoHAA Nintendo Switch build")
@@ -302,4 +625,5 @@ message(STATUS "  Target game : ${NX_TARGET_GAME}")
 message(STATUS "  Renderer    : ${NX_RENDERER}")
 message(STATUS "  NXLINK      : ${NX_ENABLE_NXLINK}")
 message(STATUS "  MAD         : ${NX_USE_CODEC_MAD}")
+message(STATUS "  Heap guard  : ${NX_HEAPGUARD}")
 message(STATUS "")
