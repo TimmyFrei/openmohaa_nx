@@ -1,0 +1,23 @@
+name: Import upstream switch branch
+
+on:
+  workflow_dispatch:
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone upstream switch branch
+        run: |
+          git clone --branch switch --single-branch https://github.com/NaGaa95/openmohaa_nx.git repo
+
+      - name: Push switch branch to fork
+        working-directory: repo
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git remote set-url origin https://x-access-token:${TOKEN}@github.com/TimmyFrei/openmohaa_nx.git
+          git push origin HEAD:switch --forc
