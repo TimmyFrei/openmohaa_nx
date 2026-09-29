@@ -17,22 +17,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show environment
+      - name: Install build dependencies
         run: |
-          echo "DEVKITPRO=$DEVKITPRO"
-          echo "DEVKITA64=$DEVKITA64"
-          which cmake || true
-          which make || true
-          which pacman || true
+          apt-get update
+          apt-get install -y flex bison
 
       - name: Configure
         run: |
-         cmake -S nx -B build \
-          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/devkita64-libnx.cmake \
-          -DNX_TARGET_GAME=0 \
-          -DNX_RENDERER=gl1 \
-          -DNX_ENABLE_NXLINK=OFF \
-          -DNX_USE_CODEC_MAD=ON
+          cmake -S nx -B build \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/devkita64-libnx.cmake \
+            -DNX_TARGET_GAME=0 \
+            -DNX_RENDERER=gl1 \
+            -DNX_ENABLE_NXLINK=OFF \
+            -DNX_USE_CODEC_MAD=ON
 
       - name: Build
         run: |
