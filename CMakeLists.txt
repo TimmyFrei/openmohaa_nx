@@ -75,7 +75,6 @@ add_compile_definitions(
     BOTLIB
     APP_MODULE
     _LINUX=1
-    NX_TARGET_GAME=${NX_TARGET_GAME}
 )
 
 # -----------------------------------------------------------------------------
@@ -286,6 +285,8 @@ target_compile_definitions(
     $<$<BOOL:${NX_ENABLE_NXLINK}>:NXLINK_ENABLE>
 
     NX_HEAPGUARD
+
+    NX_TARGET_GAME=${NX_TARGET_GAME}
 )
 
 # -----------------------------------------------------------------------------
