@@ -5,6 +5,7 @@ on:
 
 jobs:
   build:
+    name: Build Spearhead and Breakthrough
     runs-on: ubuntu-24.04
 
     container:
@@ -19,9 +20,12 @@ jobs:
       - name: Install dependencies
         run: |
           dkp-pacman -Syu --noconfirm
-          dkp-pacman -S --noconfirm \
+          dkp-pacman -S --needed --noconfirm \
             switch-dev \
             switch-sdl2 \
+            switch-sdl2_image \
+            switch-sdl2_mixer \
+            switch-sdl2_ttf \
             switch-openal-soft \
             switch-libpng \
             switch-libjpeg-turbo \
@@ -30,42 +34,74 @@ jobs:
       - name: Configure
         run: |
           cmake -B build \
-            -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake \
             -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_CLIENT=ON \
-            -DBUILD_SERVER=OFF
+            -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake
 
-      - name: Build launcher targets
+      - name: Build addon launchers
         run: |
-          cmake --build build --target openmohaa_launcher_spearhead --parallel 4
-          cmake --build build --target openmohaa_launcher_breakthrough --parallel 4
+          cmake --build build \
+            --target launch_openmohaa_spearhead \
+            --parallel 4
 
-      - name: Show build files
+          cmake --build build \
+            --target launch_openmohaa_breakthrough \
+            --parallel 4
+
+      - name: Find launcher ELFs
         run: |
-          echo "=== SPEARHEAD ==="
-          find build -type f -name "*spearhead*" -print
+          echo "Spearhead:"
+          find build -type f -iname '*spearhead*' -print
 
-          echo "=== BREAKTHROUGH ==="
-          find build -type f -name "*breakthrough*" -print
+          echo "Breakthrough:"
+          find build -type f -iname '*breakthrough*' -print
 
-          echo "=== NRO ==="
-          find build -type f -name "*.nro" -print
-
-      - name: Create NRO launchers
+      - name: Package NROs
         run: |
           mkdir -p artifacts
 
-          find build -type f -name "launch_openmohaa_spearhead.elf" -exec \
-            elf2nro {} artifacts/openmohaa-spearhead.nro \;
+          SPEARHEAD_ELF=$(find build -type f \
+            -name 'launch_openmohaa_spearhead.elf' | head -n 1)
 
-          find build -type f -name "launch_openmohaa_breakthrough.elf" -exec \
-            elf2nro {} artifacts/openmohaa-breakthrough.nro \;
+          BREAKTHROUGH_ELF=$(find build -type f \
+            -name 'launch_openmohaa_breakthrough.elf' | head -n 1)
 
-          ls -lh artifacts
+          echo "Spearhead ELF: $SPEARHEAD_ELF"
+          echo "Breakthrough ELF: $BREAKTHROUGH_ELF"
 
-      - name: Upload
+          test -n "$SPEARHEAD_ELF"
+          test -n "$BREAKTHROUGH_ELF"
+
+          nacptool --create \
+            "Medal of Honor Allied Assault - Spearhead" \
+            "OpenMoHAA NX" \
+            "1.0.0" \
+            artifacts/spearhead.nacp
+
+          nacptool --create \
+            "Medal of Honor Allied Assault - Breakthrough" \
+            "OpenMoHAA NX" \
+            "1.0.0" \
+            artifacts/breakthrough.nacp
+
+          elf2nro \
+            "$SPEARHEAD_ELF" \
+            artifacts/openmohaa-spearhead.nro \
+            --nacp=artifacts/spearhead.nacp
+
+          elf2nro \
+            "$BREAKTHROUGH_ELF" \
+            artifacts/openmohaa-breakthrough.nro \
+            --nacp=artifacts/breakthrough.nacp
+
+      - name: Verify NROs
+        run: |
+          ls -lh artifacts/*.nro
+          file artifacts/*.nro
+
+      - name: Upload NROs
         uses: actions/upload-artifact@v4
         with:
           name: openmohaa-nx-addons
-          path: artifacts/
-          if-no-files-found: error
+          path: |
+            artifacts/openmohaa-spearhead.nro
+            artifacts/openmohaa-breakthrough.nro
