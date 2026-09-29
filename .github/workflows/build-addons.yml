@@ -1,0 +1,72 @@
+name: Build MoH-NX Addon Launchers
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: devkitpro/devkita64:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          dkp-pacman -Syu --noconfirm
+          dkp-pacman -S --noconfirm \
+            switch-dev \
+            switch-sdl2 \
+            switch-sdl2_image \
+            switch-sdl2_mixer \
+            switch-sdl2_ttf \
+            switch-openal-soft \
+            switch-libpng \
+            switch-libjpeg-turbo \
+            switch-zlib
+
+      - name: Configure
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_CLIENT=ON \
+            -DBUILD_SERVER=OFF
+
+      - name: Build
+        run: |
+          cmake --build build --parallel 4
+
+      - name: Show build output
+        run: |
+          echo "=== NRO files ==="
+          find . -type f -name "*.nro" -print
+          echo "=== launcher files ==="
+          find . -type f \( \
+            -name "*spearhead*" -o \
+            -name "*breakthrough*" -o \
+            -name "*base*" \
+          \) -print
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p artifacts
+
+          find build -type f -name "*.nro" -exec cp {} artifacts/ \;
+
+          find build -type f -name "*spearhead*" -exec cp {} artifacts/ \;
+          find build -type f -name "*breakthrough*" -exec cp {} artifacts/ \;
+
+          echo "=== Artifacts ==="
+          ls -lah artifacts
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: moh-nx-launchers
+          path: artifacts/
+          if-no-files-found: error
