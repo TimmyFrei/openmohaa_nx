@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     container:
       image: devkitpro/devkita64:latest
@@ -22,9 +22,6 @@ jobs:
           dkp-pacman -S --noconfirm \
             switch-dev \
             switch-sdl2 \
-            switch-sdl2_image \
-            switch-sdl2_mixer \
-            switch-sdl2_ttf \
             switch-openal-soft \
             switch-libpng \
             switch-libjpeg-turbo \
@@ -33,40 +30,42 @@ jobs:
       - name: Configure
         run: |
           cmake -B build \
+            -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_CLIENT=ON \
             -DBUILD_SERVER=OFF
 
-      - name: Build
+      - name: Build launcher targets
         run: |
-          cmake --build build --parallel 4
+          cmake --build build --target openmohaa_launcher_spearhead --parallel 4
+          cmake --build build --target openmohaa_launcher_breakthrough --parallel 4
 
-      - name: Show build output
+      - name: Show build files
         run: |
-          echo "=== NRO files ==="
-          find . -type f -name "*.nro" -print
-          echo "=== launcher files ==="
-          find . -type f \( \
-            -name "*spearhead*" -o \
-            -name "*breakthrough*" -o \
-            -name "*base*" \
-          \) -print
+          echo "=== SPEARHEAD ==="
+          find build -type f -name "*spearhead*" -print
 
-      - name: Collect artifacts
+          echo "=== BREAKTHROUGH ==="
+          find build -type f -name "*breakthrough*" -print
+
+          echo "=== NRO ==="
+          find build -type f -name "*.nro" -print
+
+      - name: Create NRO launchers
         run: |
           mkdir -p artifacts
 
-          find build -type f -name "*.nro" -exec cp {} artifacts/ \;
+          find build -type f -name "launch_openmohaa_spearhead.elf" -exec \
+            elf2nro {} artifacts/openmohaa-spearhead.nro \;
 
-          find build -type f -name "*spearhead*" -exec cp {} artifacts/ \;
-          find build -type f -name "*breakthrough*" -exec cp {} artifacts/ \;
+          find build -type f -name "launch_openmohaa_breakthrough.elf" -exec \
+            elf2nro {} artifacts/openmohaa-breakthrough.nro \;
 
-          echo "=== Artifacts ==="
-          ls -lah artifacts
+          ls -lh artifacts
 
-      - name: Upload artifacts
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: moh-nx-launchers
+          name: openmohaa-nx-addons
           path: artifacts/
           if-no-files-found: error
