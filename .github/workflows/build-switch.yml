@@ -14,8 +14,12 @@ jobs:
       image: devkitpro/devkita64:latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Nintendo Switch port
         uses: actions/checkout@v4
+
+      - name: Checkout OpenMoHAA engine
+        run: |
+          git clone --depth 1 https://github.com/openmoh/openmohaa.git ../openmohaa
 
       - name: Install build dependencies
         run: |
@@ -43,5 +47,5 @@ jobs:
       - name: Upload NRO
         uses: actions/upload-artifact@v4
         with:
-          name: openmohaa-switch-allied-assault
-          path: artifact/
+          name: openmohaa-switch-spearhead
+          path: artifact/openmohaa.nro
