@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Quake III Arena source code; if not, write to the Free Software
+along with this source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -563,7 +563,7 @@ void *Sys_LoadDll(const char *name, qboolean useSystemLib)
 				len = Com_sprintf(libPath, sizeof(libPath), "%s%c%s", basePath, PATH_SEP, name);
 				if(len < sizeof(libPath))
 				{
-					Com_Printf("Trying to load \"%s\" from \"%s\"...\n", name, basePath);
+					Com_Printf("Trying to load \"%s\" from \"%s\"...\n", name, basePath );
 					dllhandle = Sys_LoadLibrary(libPath);
 				}
 				else
@@ -677,7 +677,7 @@ char *Sys_ParseProtocolUri( const char *uri )
 	}
 	Com_Printf( "Sys_ParseProtocolUri: %s\n", uri );
 
-	// At the moment, only "connect/hostname:port" is supported
+	// At the moment, only the "connect/hostname:port" is supported
 	if ( !Q_strncmp( uri, "connect/", strlen( "connect/" ) ) )
 	{
 		int i, bufsize;
@@ -876,6 +876,26 @@ int main( int argc, char **argv )
 		Q_strcat( commandLine, sizeof( commandLine ), "+" );
 		Q_strcat( commandLine, sizeof( commandLine ), protocolCommand );
 		free( protocolCommand );
+	}
+#endif
+
+#ifdef __SWITCH__
+	/*
+	 * The Switch build has no conventional command line, so select the
+	 * target game at compile time. The default is Allied Assault (0).
+	 *
+	 * 0 = Allied Assault
+	 * 1 = Spearhead
+	 * 2 = Breakthrough
+	 */
+	{
+		char targetGame[64];
+
+		Com_sprintf(targetGame, sizeof(targetGame),
+			"+set com_target_game %d ",
+			OPENMOHAA_TARGET_GAME);
+
+		Q_strcat(commandLine, sizeof(commandLine), targetGame);
 	}
 #endif
 
