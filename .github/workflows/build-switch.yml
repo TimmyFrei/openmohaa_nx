@@ -101,6 +101,9 @@ jobs:
 
       - name: Diagnose missing linklist.h
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/openmohaa"
+          
           echo "=== Search for linklist.h ==="
           find openmohaa -type f -iname 'linklist.h'
 
