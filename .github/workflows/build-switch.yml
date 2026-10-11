@@ -142,6 +142,21 @@ jobs:
 
           echo "=== Port repository remotes ==="
           git remote -v
+
+          echo "=== Port branch and history ==="
+          git branch -a
+          git log -10 --oneline
+
+          echo "=== Recent port changes to build files ==="
+          git log -10 --oneline -- nx/CMakeLists.txt .github/workflows/build-switch.yml
+
+          echo "=== OpenMoHAA corepp move ==="
+          git -C openmohaa show --stat --oneline ecf70528
+
+          echo "=== Current problematic declarations ==="
+          sed -n '145,225p' openmohaa/code/fgame/g_utils.h
+          sed -n '65,95p' openmohaa/code/fgame/baseimp.h
+          sed -n '250,350p' openmohaa/code/fgame/archive.h
           
       - name: Build
         run: |
