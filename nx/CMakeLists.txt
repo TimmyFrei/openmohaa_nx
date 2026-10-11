@@ -24,6 +24,26 @@ set(SRC "${OPENMOHAA_ROOT}/code")
 set(NXSRC "${CMAKE_CURRENT_SOURCE_DIR}/source")
 set(NXINC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
+# Generate OpenMoHAA version header
+set(NX_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+file(MAKE_DIRECTORY "${NX_GENERATED_DIR}")
+
+set(GIT_BRANCH_NAME "switch")
+set(GIT_REVISION_HASH "unknown")
+set(GIT_REVISION_HASH_ABBREVIATED "unknown")
+set(GIT_REVISION_DATE_TIME "unknown")
+set(GIT_REVISION_DATE "unknown")
+set(GIT_REVISION_BUILD_NUMBER 0)
+set(PRODUCT_VERSION_STAGE "unstable")
+
+configure_file(
+    "${OPENMOHAA_ROOT}/cmake/q_version.generated.h.in"
+    "${NX_GENERATED_DIR}/q_version.generated.h"
+)
+
+include_directories("${NX_GENERATED_DIR}")
+
+
 set(NX_RENDERER "gl1" CACHE STRING
     "Renderer to statically link: gl1 or gl2")
 
