@@ -393,6 +393,8 @@ target_include_directories(game_static PRIVATE
     ${SRC}/qcommon
     ${SRC}/fgame
     ${SRC}/script
+    ${SRC}/thirdparty/recastnavigation/DetourCrowd/Include
+    ${SRC}/thirdparty/recastnavigation/Detour/Include
 )
 
 target_compile_definitions(game_static PRIVATE
@@ -422,6 +424,7 @@ target_compile_definitions(cgame_static PRIVATE
     BOTLIB
     APP_MODULE
     _LINUX=1
+    CGAME_DLL
     NX_TARGET_GAME=${NX_TARGET_GAME}
 )
 
