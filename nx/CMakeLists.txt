@@ -388,6 +388,7 @@ add_library(game_static STATIC
 )
 
 target_include_directories(game_static PRIVATE
+    ${SRC}/corepp
     ${SRC}
     ${SRC}/qcommon
     ${SRC}/fgame
