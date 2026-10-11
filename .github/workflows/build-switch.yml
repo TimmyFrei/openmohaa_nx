@@ -23,6 +23,7 @@ jobs:
         with:
           repository: openmoh/openmohaa
           path: openmohaa
+          fetch-depth: 0
 
       - name: Install build dependencies
         run: |
