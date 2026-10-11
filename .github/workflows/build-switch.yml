@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout Nintendo Switch port
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Checkout OpenMoHAA engine
         uses: actions/checkout@v4
@@ -157,6 +159,20 @@ jobs:
           sed -n '145,225p' openmohaa/code/fgame/g_utils.h
           sed -n '65,95p' openmohaa/code/fgame/baseimp.h
           sed -n '250,350p' openmohaa/code/fgame/archive.h
+
+          echo "=== Game target configuration ==="
+          sed -n '360,430p' nx/CMakeLists.txt
+
+          echo "=== Entity structure ==="
+          grep -R -n -E 'struct gentity_s|typedef struct gentity_s|gentity_t' \
+            openmohaa/code/qcommon openmohaa/code/fgame/g_local.h | head -60
+
+          echo "=== con_set Archive declarations ==="
+          grep -n -E 'class con_set|class con_map|Archive\(' \
+            openmohaa/code/corepp/con_set.h openmohaa/code/fgame/archive.h
+
+          echo "=== Port history ==="
+          git log --all --oneline -20
           
       - name: Build
         run: |
