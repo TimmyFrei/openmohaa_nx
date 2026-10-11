@@ -55,7 +55,7 @@ jobs:
           root = Path("openmohaa")
 
           paths = sorted(set(re.findall(
-              r'\$\{SRC\}/([A-Za-z0-9_./+-]+\.(?:c|cpp|cc|cxx))',
+              r'\$\{SRC\}/([A-Za-z0-9_./+-]+\.(?:cpp|cxx|cc|c))(?=[\s)])',
               cmake
           )))
 
