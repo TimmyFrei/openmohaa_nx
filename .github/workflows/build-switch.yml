@@ -41,13 +41,20 @@ jobs:
 
       - name: Configure OpenMoHAA for Nintendo Switch
         run: |
+          echo "Checking upstream source tree..."
+          test -f "$GITHUB_WORKSPACE/openmohaa/code/sys/sys_main.c"
+          echo "Upstream sources found"
+
           cmake -S nx -B build \
             -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/devkita64-libnx.cmake \
-            -DOPENMOHAA_ROOT="${{ github.workspace }}/openmohaa" \
+            -DOPENMOHAA_ROOT="$GITHUB_WORKSPACE/openmohaa" \
             -DNX_TARGET_GAME=1 \
             -DNX_RENDERER=gl1 \
             -DNX_ENABLE_NXLINK=OFF \
             -DNX_USE_CODEC_MAD=ON
+
+          echo "Configured source root:"
+          grep '^OPENMOHAA_ROOT:PATH=' build/CMakeCache.txt
 
       - name: Build
         run: |
