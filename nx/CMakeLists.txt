@@ -395,6 +395,9 @@ target_include_directories(game_static PRIVATE
     ${SRC}/script
     ${SRC}/thirdparty/recastnavigation/DetourCrowd/Include
     ${SRC}/thirdparty/recastnavigation/Detour/Include
+    ${SRC}/thirdparty/recastnavigation/Recast/Include
+    ${SRC}/thirdparty/recastnavigation/Detour/Include
+    ${SRC}/thirdparty/recastnavigation/DetourCrowd/Include
 )
 
 target_compile_definitions(game_static PRIVATE
