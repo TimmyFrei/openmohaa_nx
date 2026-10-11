@@ -400,6 +400,9 @@ target_compile_definitions(game_static PRIVATE
     BOTLIB
     APP_MODULE
     _LINUX=1
+    GAME_DLL
+    WITH_SCRIPT_ENGINE
+    ARCHIVE_SUPPORTED
     NX_TARGET_GAME=${NX_TARGET_GAME}
 )
 
