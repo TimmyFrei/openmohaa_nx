@@ -43,7 +43,13 @@ jobs:
           echo "=== Upstream revision ==="
           git -C openmohaa log -1 --oneline
 
-      
+          echo "=== linklist headers ==="
+          find openmohaa/code -iname '*linklist*' -o -iname '*list*link*'
+
+          echo "=== references to linklist.h ==="
+          grep -R -n --include='*.h' --include='*.c' --include='*.cpp' \
+          'linklist\.h' openmohaa/code
+
       - name: Check CMake source compatibility
         run: |
           echo "=== Missing explicitly referenced source files ==="
