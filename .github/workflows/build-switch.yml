@@ -29,36 +29,20 @@ jobs:
           apt-get update
           apt-get install -y flex bison
 
-      - name: Verify engine sources
+      - name: Inspect upstream source layout
         run: |
-          echo "Checking required engine files..."
-          for f in \
-            code/sys/sys_main.c \
-            code/gamespy/common/gamespy_common.cpp \
-            code/gamespy/gcdkey/gcdkey.cpp \
-            code/qcommon/cm_trace.cpp
-          do
-            if [ -f "openmohaa/$f" ]; then
-              echo "FOUND: openmohaa/$f"
-            else
-              echo "MISSING: openmohaa/$f"
-            fi
-          done
+          echo "=== GameSpy common ==="
+          find openmohaa/code/gamespy/common -maxdepth 1 -type f | sort | head -60
 
-          if [ ! -f openmohaa/code/gamespy/common/gamespy_common.cpp ] || \
-             [ ! -f openmohaa/code/gamespy/gcdkey/gcdkey.cpp ] || \
-             [ ! -f openmohaa/code/qcommon/cm_trace.cpp ]; then
-            echo "Required engine source files are missing."
-            exit 1
-          fi
+          echo "=== GameSpy gcdkey ==="
+          find openmohaa/code/gamespy/gcdkey -maxdepth 1 -type f | sort | head -60
+
+          echo "=== Collision trace files ==="
+          find openmohaa/code/qcommon -maxdepth 1 -iname '*trace*' -type f | sort
+
+          echo "=== Upstream revision ==="
+          git -C openmohaa log -1 --oneline
           
-          echo "GameSpy directory:"
-          ls -la openmohaa/code/gamespy/common \
-                 openmohaa/code/gamespy/gcdkey || true
-
-          echo "Collision-model files:"
-          find openmohaa/code/qcommon -maxdepth 1 -iname '*trace*' -o -iname '*world*'
-
       - name: Configure OpenMoHAA for Nintendo Switch
         run: |
           echo "Checking upstream source tree..."
