@@ -257,12 +257,13 @@ set_source_files_properties(
 # GameSpy
 # =============================================================================
 
-set(GAMESPY_COMMON_SOURCES
-    ${SRC}/gamespy/common/gamespy_common.cpp
+file(GLOB GAMESPY_COMMON_SOURCES
+    "${SRC}/gamespy/common/*.c"
 )
 
 set(GAMESPY_GCDKEY_SOURCES
-    ${SRC}/gamespy/gcdkey/gcdkey.cpp
+    ${SRC}/gamespy/gcdkey/gcdkeyc.c
+    ${SRC}/gamespy/gcdkey/gcdkeys.c
 )
 
 add_library(gcd_common STATIC
