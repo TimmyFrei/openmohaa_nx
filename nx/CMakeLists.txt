@@ -289,7 +289,7 @@ target_include_directories(gcd_key PUBLIC
 
 set(COMMON_SOURCES
 
-    ${SRC}/qcommon/cm_trace.cpp
+    ${SRC}/qcommon/cm_trace.c
     ${SRC}/qcommon/cm_world.cpp
     ${SRC}/qcommon/common.cpp
     ${SRC}/qcommon/cvar.cpp
