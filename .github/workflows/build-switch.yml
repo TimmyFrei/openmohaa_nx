@@ -99,6 +99,21 @@ jobs:
           echo "Configured source root:"
           grep '^OPENMOHAA_ROOT:PATH=' build/CMakeCache.txt
 
+      - name: Diagnose missing linklist.h
+        run: |
+          echo "=== Search for linklist.h ==="
+          find openmohaa -type f -iname 'linklist.h'
+
+          echo "=== Search for related headers ==="
+          find openmohaa/code -type f \( -iname '*linklist*' -o -iname '*list*link*' \)
+
+          echo "=== All references to linklist.h ==="
+          grep -R -n --include='*.h' --include='*.c' --include='*.cpp' \
+            'linklist\.h' openmohaa/code || true
+
+          echo "=== Include directories in CMake ==="
+          grep -n -E 'include_directories|target_include_directories|OPENMOHAA_ROOT|GAME_SOURCES' nx/CMakeLists.txt
+
       - name: Build
         run: |
           cmake --build build --parallel 2
