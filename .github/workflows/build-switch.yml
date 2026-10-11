@@ -29,6 +29,16 @@ jobs:
           apt-get update
           apt-get install -y flex bison
 
+      - name: Verify engine sources
+        run: |
+          echo "Workspace: $GITHUB_WORKSPACE"
+          echo "Checking OpenMoHAA source tree..."
+          test -f openmohaa/code/sys/sys_main.c
+          echo "Found sys_main.c"
+          find openmohaa \( -iname '*spearhead*' -o -iname '*breakthrough*' \)
+          echo "Checking Switch source tree..."
+          find nx -maxdepth 3 -type f | head -80    
+
       - name: Configure OpenMoHAA for Nintendo Switch
         run: |
           cmake -S nx -B build \
