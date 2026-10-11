@@ -122,6 +122,22 @@ jobs:
 
           echo "=== Source layout ==="
           find openmohaa/code -maxdepth 1 -type d | sort
+
+          echo "=== Port repository commit ==="
+          git log -1 --format="%H %s"
+
+          echo "=== Port source references ==="
+          grep -R -n \
+          --include='*.cmake' --include='CMakeLists.txt' \
+          'OPENMOHAA_ROOT\|add_subdirectory.*fgame\|g_utils.h' nx
+
+          echo "=== Relevant upstream file history ==="
+          git -C openmohaa log -8 --oneline -- code/fgame/g_utils.h
+          git -C openmohaa log -8 --oneline -- code/fgame/archive.h
+          git -C openmohaa log -8 --oneline -- code/fgame/baseimp.h
+
+          echo "=== Port repository remotes ==="
+          git remote -v
           
       - name: Build
         run: |
