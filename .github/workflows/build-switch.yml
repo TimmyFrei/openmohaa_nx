@@ -113,7 +113,16 @@ jobs:
 
           echo "=== Include directories in CMake ==="
           grep -n -E 'include_directories|target_include_directories|OPENMOHAA_ROOT|GAME_SOURCES' nx/CMakeLists.txt
+          
+          echo "=== OpenMoHAA commit ==="
+          git -C openmohaa log -1 --format="%H %s"
 
+          echo "=== OpenMoHAA version ==="
+          git -C openmohaa describe --tags --always
+
+          echo "=== Source layout ==="
+          find openmohaa/code -maxdepth 1 -type d | sort
+          
       - name: Build
         run: |
           cmake --build build --parallel 2
