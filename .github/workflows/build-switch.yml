@@ -42,6 +42,39 @@ jobs:
 
           echo "=== Upstream revision ==="
           git -C openmohaa log -1 --oneline
+
+      
+      - name: Check CMake source compatibility
+        run: |
+          echo "=== Missing explicitly referenced source files ==="
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          cmake = Path("nx/CMakeLists.txt").read_text()
+          root = Path("openmohaa")
+
+          paths = sorted(set(re.findall(
+              r'\$\{SRC\}/([A-Za-z0-9_./+-]+\.(?:c|cpp|cc|cxx))',
+              cmake
+          )))
+
+          missing = []
+          for rel in paths:
+              if not (root / "code" / rel).is_file():
+                  missing.append(rel)
+
+          if missing:
+              for path in missing:
+                  print("MISSING:", path)
+              print(f"\nTotal missing files: {len(missing)}")
+          else:
+              print("All explicitly referenced source files exist.")
+          PY
+
+          echo "=== Upstream commit ==="
+          git -C openmohaa log -1 --oneline
+
           
       - name: Configure OpenMoHAA for Nintendo Switch
         run: |
