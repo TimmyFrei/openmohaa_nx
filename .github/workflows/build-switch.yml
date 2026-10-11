@@ -31,13 +31,33 @@ jobs:
 
       - name: Verify engine sources
         run: |
-          echo "Workspace: $GITHUB_WORKSPACE"
-          echo "Checking OpenMoHAA source tree..."
-          test -f openmohaa/code/sys/sys_main.c
-          echo "Found sys_main.c"
-          find openmohaa \( -iname '*spearhead*' -o -iname '*breakthrough*' \)
-          echo "Checking Switch source tree..."
-          find nx -maxdepth 3 -type f | head -80    
+          echo "Checking required engine files..."
+          for f in \
+            code/sys/sys_main.c \
+            code/gamespy/common/gamespy_common.cpp \
+            code/gamespy/gcdkey/gcdkey.cpp \
+            code/qcommon/cm_trace.cpp
+          do
+            if [ -f "openmohaa/$f" ]; then
+              echo "FOUND: openmohaa/$f"
+            else
+              echo "MISSING: openmohaa/$f"
+            fi
+          done
+
+          if [ ! -f openmohaa/code/gamespy/common/gamespy_common.cpp ] || \
+             [ ! -f openmohaa/code/gamespy/gcdkey/gcdkey.cpp ] || \
+             [ ! -f openmohaa/code/qcommon/cm_trace.cpp ]; then
+            echo "Required engine source files are missing."
+            exit 1
+          fi
+          
+          echo "GameSpy directory:"
+          ls -la openmohaa/code/gamespy/common \
+                 openmohaa/code/gamespy/gcdkey || true
+
+          echo "Collision-model files:"
+          find openmohaa/code/qcommon -maxdepth 1 -iname '*trace*' -o -iname '*world*'
 
       - name: Configure OpenMoHAA for Nintendo Switch
         run: |
