@@ -283,49 +283,16 @@ target_include_directories(gcd_key PUBLIC
     ${SRC}/gamespy/common
 )
 
+```cmake
 # =============================================================================
 # Common engine sources
 # =============================================================================
 
-set(COMMON_SOURCES
-
-    ${SRC}/qcommon/cm_trace.c
-    ${SRC}/qcommon/cm_world.cpp
-    ${SRC}/qcommon/common.cpp
-    ${SRC}/qcommon/cvar.cpp
-    ${SRC}/qcommon/files.cpp
-    ${SRC}/qcommon/md4.cpp
-    ${SRC}/qcommon/msg.cpp
-    ${SRC}/qcommon/net_chan.cpp
-    ${SRC}/qcommon/q_math.cpp
-    ${SRC}/qcommon/q_shared.cpp
-    ${SRC}/qcommon/qcommon.cpp
-    ${SRC}/qcommon/sv_ccmds.cpp
-    ${SRC}/qcommon/sv_client.cpp
-    ${SRC}/qcommon/sv_game.cpp
-    ${SRC}/qcommon/sv_init.cpp
-    ${SRC}/qcommon/sv_main.cpp
-    ${SRC}/qcommon/sv_net_chan.cpp
-    ${SRC}/qcommon/sv_snapshot.cpp
-    ${SRC}/qcommon/sv_world.cpp
-    ${SRC}/qcommon/usercmd.cpp
-
-    ${SRC}/script/script.cpp
-    ${SRC}/script/script_variable.cpp
-    ${SRC}/script/script_token.cpp
-    ${SRC}/script/script_thread.cpp
-    ${SRC}/script/script_threadlist.cpp
-    ${SRC}/script/script_class.cpp
-    ${SRC}/script/script_struct.cpp
-    ${SRC}/script/script_exception.cpp
-    ${SRC}/script/script_error.cpp
-
-    ${SRC}/sys/con_log.c
-    ${SRC}/sys/con_passive.c
-    ${SRC}/sys/sys_main.c
-    ${SRC}/sys/win_bounds.cpp
-    ${SRC}/sys/win_localization.cpp
-    ${SRC}/sys/sys_update_checker.cpp
+file(GLOB COMMON_SOURCES CONFIGURE_DEPENDS
+    "${SRC}/qcommon/*.c"
+    "${SRC}/qcommon/*.cpp"
+    "${SRC}/script/*.c"
+    "${SRC}/script/*.cpp"
 )
 
 # =============================================================================
