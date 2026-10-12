@@ -228,40 +228,27 @@ jobs:
             'G_GetEntity' \
             openmohaa/code nx || true
 
-      - name: Diagnose game source targets
+      - name: Diagnose g_utils header leakage
         run: |
-          echo "=== Source lists and targets ==="
-          grep -n -E \
-            'GAME_SOURCES|CLIENT_SOURCES|COMMON_SOURCES|add_executable\(openmohaa|add_library\(game_static|target_compile_definitions\(game_static|GAME_DLL' \
-            nx/CMakeLists.txt
+          echo "=== Game headers included outside fgame ==="
+          grep -R -n \
+            --include='*.h' --include='*.c' --include='*.cpp' \
+            -E '#include[[:space:]]*[<"](g_local|g_utils)\.h[>"]' \
+            openmohaa/code nx \
+            | grep -v 'openmohaa/code/fgame/' || true
 
-          echo "=== Compile commands for game sources ==="
-          cmake -S nx -B build \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/devkita64-libnx.cmake \
-            -DOPENMOHAA_ROOT="$GITHUB_WORKSPACE/openmohaa" \
-            -DNX_TARGET_GAME=1 \
-            -DNX_RENDERER=gl1 \
-            -DNX_ENABLE_NXLINK=OFF \
-            -DNX_USE_CODEC_MAD=ON
+          echo "=== Exact failing source ==="
+          grep -n -B 8 -A 8 'g_entities\[entnum\]\.entity' \
+            openmohaa/code/fgame/g_utils.h
 
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
+          echo "=== gentity_t declaration and guards ==="
+          grep -n -B 5 -A 25 'typedef struct gentity_s' \
+            openmohaa/code/fgame/g_public.h
 
-          p = Path("build/compile_commands.json")
-          if not p.exists():
-              raise SystemExit("compile_commands.json not found")
+          echo "=== Client compile commands referencing game headers ==="
+          grep -n -E 'client/.*\.(cpp|c)|g_utils\.h|g_local\.h' \
+            build/compile_commands.json | head -100
 
-          for item in json.loads(p.read_text()):
-              source = item["file"]
-              if any(name in source for name in (
-                  "g_utils.cpp", "scriptthread.cpp", "g_main.cpp"
-              )):
-                  print(f"\nSOURCE: {source}")
-                  print(item.get("command", item.get("arguments", "")))
-          PY   
-          
       - name: Build
         run: |
           cmake --build build --parallel 2
