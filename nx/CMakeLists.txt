@@ -503,6 +503,10 @@ add_executable(openmohaa
     ${RENDERER_SOURCES}
 )
 
+target_compile_options(openmohaa PRIVATE
+    -H
+)
+
 target_include_directories(openmohaa PRIVATE
 
     ${SRC}
