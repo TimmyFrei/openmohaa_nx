@@ -310,8 +310,6 @@ target_include_directories(gcd_key PUBLIC
 file(GLOB COMMON_SOURCES CONFIGURE_DEPENDS
     "${SRC}/qcommon/*.c"
     "${SRC}/qcommon/*.cpp"
-    "${SRC}/script/*.c"
-    "${SRC}/script/*.cpp"
 )
 
 # =============================================================================
@@ -394,9 +392,39 @@ set(SYSTEM_SOURCES
 # =============================================================================
 
 file(GLOB GAME_SOURCES
+    
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
+
+file(MAKE_DIRECTORY "${SRC}/parser/generated")
+
+BISON_TARGET(
+    fgame-parser
+    "${SRC}/parser/bison_source.txt"
+    "${SRC}/parser/generated/yyParser.cpp"
+)
+
+FLEX_TARGET(
+    fgame-lexer
+    "${SRC}/parser/lex_source.txt"
+    "${SRC}/parser/generated/yyLexer.cpp"
+    DEFINES_FILE "${SRC}/parser/generated/yyLexer.h"
+    COMPILE_FLAGS "-Cem --nounistd"
+)
+
+file(GLOB GAME_SOURCES CONFIGURE_DEPENDS
     "${SRC}/fgame/*.cpp"
     "${SRC}/fgame/*.c"
+    "${SRC}/script/*.cpp"
+    "${SRC}/script/*.c"
+    "${SRC}/parser/parsetree.cpp"
 )
+
+list(APPEND GAME_SOURCES
+    ${BISON_fgame-parser_OUTPUTS}
+    ${FLEX_fgame-lexer_OUTPUTS}
+)
+
 
 file(GLOB CGAME_SOURCES
     "${SRC}/cgame/*.cpp"
@@ -492,6 +520,8 @@ target_compile_definitions(openmohaa PRIVATE
     BOTLIB
     APP_MODULE
     _LINUX=1
+    WITH_SCRIPT_ENGINE
+    ARCHIVE_SUPPORTED
 
     NX_TARGET_GAME=${NX_TARGET_GAME}
 )
