@@ -27,6 +27,40 @@ jobs:
           path: openmohaa
           fetch-depth: 0
 
+      
+      - name: Patch IPv6 compatibility for Switch
+        run: |
+          cd openmohaa
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("code/qcommon/net_ip.c")
+          s = p.read_text()
+
+          needle = "#endif\n\nstatic qboolean usingSocks"
+          replacement = """#endif
+
+          #ifdef __SWITCH__
+          struct ipv6_mreq {
+              struct in6_addr ipv6mr_multiaddr;
+              int ipv6mr_interface;
+          };
+
+          static unsigned int if_nametoindex(const char *ifname) {
+              (void)ifname;
+              return 0;
+          }
+          #endif
+
+          static qboolean usingSocks"""
+
+          if needle not in s:
+              raise SystemExit("Could not find insertion point in net_ip.c")
+
+          p.write_text(s.replace(needle, replacement, 1))
+          PY
+    
+
       - name: Install build dependencies
         run: |
           apt-get update
