@@ -1,8 +1,4 @@
-     - name: Find g_utils.h includes
-       run: |
-          grep -R -n '#include.*g_utils\.h' \
-            "$GITHUB_WORKSPACE/openmohaa/code" \
-            "$GITHUB_WORKSPACE/nx"
+
 
 name: Build Nintendo Switch
 
@@ -217,7 +213,21 @@ jobs:
 
           echo "=== Port history ==="
           git log --all --oneline -20
-          
+
+      - name: Find g_utils.h includes
+        run: |
+          echo "=== Files including g_utils.h ==="
+          grep -R -n \
+            --include='*.h' --include='*.c' --include='*.cpp' \
+            '#include.*g_utils\.h' \
+            openmohaa/code nx || true
+
+          echo "=== References to G_GetEntity ==="
+          grep -R -n \
+            --include='*.h' --include='*.c' --include='*.cpp' \
+            'G_GetEntity' \
+            openmohaa/code nx || true
+ 
       - name: Build
         run: |
           cmake --build build --parallel 2
