@@ -87,6 +87,11 @@ jobs:
           grep -R -n --include='*.h' --include='*.c' --include='*.cpp' \
           'linklist\.h' openmohaa/code
 
+      - name: Install parser generators
+        run: |
+          apt-get update
+          apt-get install -y flex bison    
+
       - name: Check CMake source compatibility
         run: |
           echo "=== Missing explicitly referenced source files ==="
