@@ -392,7 +392,7 @@ set(SYSTEM_SOURCES
 # =============================================================================
 
 file(GLOB GAME_SOURCES
-    
+
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
@@ -411,6 +411,20 @@ FLEX_TARGET(
     DEFINES_FILE "${SRC}/parser/generated/yyLexer.h"
     COMPILE_FLAGS "-Cem --nounistd"
 )
+
+file(GLOB GAME_SOURCES CONFIGURE_DEPENDS
+    "${SRC}/fgame/*.cpp"
+    "${SRC}/fgame/*.c"
+    "${SRC}/script/*.cpp"
+    "${SRC}/script/*.c"
+    "${SRC}/parser/parsetree.cpp"
+)
+
+list(APPEND GAME_SOURCES
+    ${BISON_fgame-parser_OUTPUTS}
+    ${FLEX_fgame-lexer_OUTPUTS}
+)
+
 
 file(GLOB GAME_SOURCES CONFIGURE_DEPENDS
     "${SRC}/fgame/*.cpp"
