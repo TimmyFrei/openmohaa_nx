@@ -249,6 +249,26 @@ jobs:
           grep -n -E 'client/.*\.(cpp|c)|g_utils\.h|g_local\.h' \
             build/compile_commands.json | head -100
 
+      - name: Diagnose client source lists
+        run: |
+          echo "=== CMake source list definitions ==="
+          sed -n '300,375p' nx/CMakeLists.txt
+          sed -n '405,510p' nx/CMakeLists.txt
+
+          echo "=== All references to g_local.h and g_utils.h ==="
+          grep -R -n \
+            --include='*.h' --include='*.c' --include='*.cpp' \
+            -E 'g_local\.h|g_utils\.h|G_GetEntity' \
+            openmohaa/code nx || true
+
+          echo "=== CMake generator and export settings ==="
+          grep -E 'CMAKE_GENERATOR:|CMAKE_EXPORT_COMPILE_COMMANDS:|CMAKE_TOOLCHAIN_FILE:' \
+            build/CMakeCache.txt || true
+
+          echo "=== Build target files ==="
+          find build/CMakeFiles/openmohaa.dir -type f \
+            \( -name '*.o' -o -name '*.obj' \) | head -80
+
       - name: Build
         run: |
           cmake --build build --parallel 2
