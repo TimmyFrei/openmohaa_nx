@@ -391,8 +391,6 @@ set(SYSTEM_SOURCES
 # Static game / cgame modules
 # =============================================================================
 
-file(GLOB GAME_SOURCES
-
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
