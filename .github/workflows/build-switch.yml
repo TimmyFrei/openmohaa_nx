@@ -227,7 +227,41 @@ jobs:
             --include='*.h' --include='*.c' --include='*.cpp' \
             'G_GetEntity' \
             openmohaa/code nx || true
- 
+
+      - name: Diagnose game source targets
+        run: |
+          echo "=== Source lists and targets ==="
+          grep -n -E \
+            'GAME_SOURCES|CLIENT_SOURCES|COMMON_SOURCES|add_executable\(openmohaa|add_library\(game_static|target_compile_definitions\(game_static|GAME_DLL' \
+            nx/CMakeLists.txt
+
+          echo "=== Compile commands for game sources ==="
+          cmake -S nx -B build \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/devkita64-libnx.cmake \
+            -DOPENMOHAA_ROOT="$GITHUB_WORKSPACE/openmohaa" \
+            -DNX_TARGET_GAME=1 \
+            -DNX_RENDERER=gl1 \
+            -DNX_ENABLE_NXLINK=OFF \
+            -DNX_USE_CODEC_MAD=ON
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          p = Path("build/compile_commands.json")
+          if not p.exists():
+              raise SystemExit("compile_commands.json not found")
+
+          for item in json.loads(p.read_text()):
+              source = item["file"]
+              if any(name in source for name in (
+                  "g_utils.cpp", "scriptthread.cpp", "g_main.cpp"
+              )):
+                  print(f"\nSOURCE: {source}")
+                  print(item.get("command", item.get("arguments", "")))
+          PY   
+          
       - name: Build
         run: |
           cmake --build build --parallel 2
