@@ -504,7 +504,6 @@ add_executable(openmohaa
 )
 
 target_compile_options(openmohaa PRIVATE
-    -H
 )
 
 target_include_directories(openmohaa PRIVATE
@@ -537,7 +536,6 @@ target_compile_definitions(openmohaa PRIVATE
     APP_MODULE
     _LINUX=1
     WITH_SCRIPT_ENGINE
-    ARCHIVE_SUPPORTED
 
     NX_TARGET_GAME=${NX_TARGET_GAME}
 )
