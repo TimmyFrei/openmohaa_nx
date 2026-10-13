@@ -283,6 +283,7 @@ jobs:
           grep -RIn "libmumblelink" nx openmohaa/code
           grep -RIn "libmumblelink.c" openmohaa/code
           grep -RIn "mumble_link\|mumble_update_coordinates\|mumble_unlink" openmohaa/code/client
+          grep -RIn "USE_MUMBLE" nx openmohaa/code
           cmake --build build --parallel 2
 
       - name: Prepare artifact
