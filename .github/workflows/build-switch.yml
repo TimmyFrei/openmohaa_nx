@@ -274,6 +274,13 @@ jobs:
       - name: Build
         run: |
           grep -RIn "ARCHIVE_SUPPORTED" nx openmohaa/code
+          echo "=== ARCHIVE_SUPPORTED in CMakeLists ==="
+          sed -n '450,480p' nx/CMakeLists.txt
+          sed -n '525,550p' nx/CMakeLists.txt
+
+          echo "=== Actual compiler flags ==="
+          grep -R "ARCHIVE_SUPPORTED" build/CMakeFiles/openmohaa.dir/flags.make || true
+          grep -R "ARCHIVE_SUPPORTED" build/CMakeFiles/game_static.dir/flags.make || true
           cmake --build build --parallel 2
 
       - name: Prepare artifact
