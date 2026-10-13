@@ -269,11 +269,10 @@ jobs:
           find build/CMakeFiles/openmohaa.dir -type f \
             \( -name '*.o' -o -name '*.obj' \) | head -80
 
-          grep -RIn "ARCHIVE_SUPPORTED" nx openmohaa/code
-
       - name: Build
         run: |
-          grep -RIn "ARCHIVE_SUPPORTED" nx openmohaa/code
+          grep -RIn "libmumblelink.c" openmohaa/code 
+          grep -RIn -E "mumble_link|mumble_update_coordinates|mumble_unlink|mumble_set_identity|mumble_set_context|mumble_set_description|mumble_islinked" openmohaa/code/client
           echo "=== ARCHIVE_SUPPORTED in CMakeLists ==="
           sed -n '450,480p' nx/CMakeLists.txt
           sed -n '525,550p' nx/CMakeLists.txt
