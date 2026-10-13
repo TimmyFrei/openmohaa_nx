@@ -281,6 +281,7 @@ jobs:
           echo "=== Actual compiler flags ==="
           grep -R "ARCHIVE_SUPPORTED" build/CMakeFiles/openmohaa.dir/flags.make || true
           grep -R "ARCHIVE_SUPPORTED" build/CMakeFiles/game_static.dir/flags.make || true
+          grep -RIn "libmumblelink" nx openmohaa/code
           cmake --build build --parallel 2
 
       - name: Prepare artifact
