@@ -273,6 +273,7 @@ jobs:
 
       - name: Build
         run: |
+          grep -RIn "ARCHIVE_SUPPORTED" nx openmohaa/code
           cmake --build build --parallel 2
 
       - name: Prepare artifact
