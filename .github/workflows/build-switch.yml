@@ -282,6 +282,8 @@ jobs:
           grep -R "ARCHIVE_SUPPORTED" build/CMakeFiles/openmohaa.dir/flags.make || true
           grep -R "ARCHIVE_SUPPORTED" build/CMakeFiles/game_static.dir/flags.make || true
           grep -RIn "libmumblelink" nx openmohaa/code
+          grep -RIn "libmumblelink.c" openmohaa/code
+          grep -RIn "mumble_link\|mumble_update_coordinates\|mumble_unlink" openmohaa/code/client
           cmake --build build --parallel 2
 
       - name: Prepare artifact
