@@ -269,6 +269,8 @@ jobs:
           find build/CMakeFiles/openmohaa.dir -type f \
             \( -name '*.o' -o -name '*.obj' \) | head -80
 
+          grep -RIn "ARCHIVE_SUPPORTED" nx openmohaa/code
+
       - name: Build
         run: |
           cmake --build build --parallel 2
