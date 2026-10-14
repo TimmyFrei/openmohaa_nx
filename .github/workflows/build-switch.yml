@@ -290,6 +290,11 @@ jobs:
 
           echo "=== Source list definitions ==="
           grep -n -E "COMMON_SOURCES|CLIENT_SOURCES|SYSTEM_SOURCES|RENDERER_SOURCES" nx/CMakeLists.txt
+          echo "=== Mumble source in generated build files ==="
+          grep -RIn "libmumblelink.c" build --include="build.make" --include="*.ninja" --include="DependInfo.cmake" || true
+
+          echo "=== Mumble source in CMake source lists ==="
+          grep -RIn "libmumblelink.c" openmohaa nx --include="CMakeLists.txt" --include="*.cmake" --include="*.txt" || true
           cmake --build build --parallel 2
 
       - name: Prepare artifact
