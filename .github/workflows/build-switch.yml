@@ -1,181 +1,181 @@
 name: Build Nintendo Switch
 
 on:
-workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
-contents: read
+  contents: read
 
 jobs:
-build-switch:
-runs-on: ubuntu-latest
+  build-switch:
+    runs-on: ubuntu-latest
 
-container:
-  image: devkitpro/devkita64:latest
+    container:
+      image: devkitpro/devkita64:latest
 
-steps:
-  - name: Checkout Nintendo Switch port
-    uses: actions/checkout@v4
-    with:
-      fetch-depth: 0
+    steps:
+      - name: Checkout Nintendo Switch port
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  - name: Checkout OpenMoHAA engine
-    uses: actions/checkout@v4
-    with:
-      repository: openmoh/openmohaa
-      path: openmohaa
-      fetch-depth: 0
+      - name: Checkout OpenMoHAA engine
+        uses: actions/checkout@v4
+        with:
+          repository: openmoh/openmohaa
+          path: openmohaa
+          fetch-depth: 0
 
-  - name: Disable Mumble Link on Switch
-    run: |
-      python3 - <<'PY'
-      from pathlib import Path
+      - name: Disable Mumble Link on Switch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
 
-      p = Path("openmohaa/cmake/client.cmake")
-      lines = p.read_text().splitlines(keepends=True)
+          p = Path("openmohaa/cmake/client.cmake")
+          lines = p.read_text().splitlines(keepends=True)
 
-      needle = "${SOURCE_DIR}/client/libmumblelink.c"
-      matched = [line for line in lines if needle in line]
+          needle = "${SOURCE_DIR}/client/libmumblelink.c"
+          matched = [line for line in lines if needle in line]
 
-      if len(matched) != 2:
-          raise SystemExit(
-              f"Expected 2 Mumble source entries, found {len(matched)}"
-          )
+          if len(matched) != 2:
+              raise SystemExit(
+                  f"Expected 2 Mumble source entries, found {len(matched)}"
+              )
 
-      lines = [line for line in lines if needle not in line]
-      p.write_text("".join(lines))
+          lines = [line for line in lines if needle not in line]
+          p.write_text("".join(lines))
 
-      print("Removed both Mumble source entries for Nintendo Switch.")
-      PY
+          print("Removed both Mumble source entries for Nintendo Switch.")
+          PY
 
-  - name: Patch IPv6 compatibility for Switch
-    run: |
-      cd openmohaa
-      python3 - <<'PY'
-      from pathlib import Path
+      - name: Patch IPv6 compatibility for Switch
+        run: |
+          cd openmohaa
+          python3 - <<'PY'
+          from pathlib import Path
 
-      p = Path("code/qcommon/net_ip.c")
-      s = p.read_text()
+          p = Path("code/qcommon/net_ip.c")
+          s = p.read_text()
 
-      needle = "#endif\n\nstatic qboolean usingSocks"
-      replacement = """#endif
+          needle = "#endif\n\nstatic qboolean usingSocks"
+          replacement = """#endif
 
-      #ifdef __SWITCH__
-      struct ipv6_mreq {
-          struct in6_addr ipv6mr_multiaddr;
-          int ipv6mr_interface;
-      };
+          #ifdef __SWITCH__
+          struct ipv6_mreq {
+              struct in6_addr ipv6mr_multiaddr;
+              int ipv6mr_interface;
+          };
 
-      static unsigned int if_nametoindex(const char *ifname) {
-          (void)ifname;
-          return 0;
-      }
-      #endif
+          static unsigned int if_nametoindex(const char *ifname) {
+              (void)ifname;
+              return 0;
+          }
+          #endif
 
-      static qboolean usingSocks"""
+          static qboolean usingSocks"""
 
-      if needle not in s:
-          raise SystemExit("Could not find insertion point in net_ip.c")
+          if needle not in s:
+              raise SystemExit("Could not find insertion point in net_ip.c")
 
-      p.write_text(s.replace(needle, replacement, 1))
-      PY
+          p.write_text(s.replace(needle, replacement, 1))
+          PY
 
-  - name: Install build dependencies
-    run: |
-      apt-get update
-      apt-get install -y flex bison
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y flex bison
 
-  - name: Check CMake source compatibility
-    run: |
-      echo "=== Missing explicitly referenced source files ==="
-      python3 - <<'PY'
-      import re
-      from pathlib import Path
+      - name: Check CMake source compatibility
+        run: |
+          echo "=== Missing explicitly referenced source files ==="
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
 
-      cmake = Path("nx/CMakeLists.txt").read_text()
-      root = Path("openmohaa")
+          cmake = Path("nx/CMakeLists.txt").read_text()
+          root = Path("openmohaa")
 
-      paths = sorted(set(re.findall(
-          r'\$\{SRC\}/([A-Za-z0-9_./+-]+\.(?:cpp|cxx|cc|c))(?=[\s)])',
-          cmake
-      )))
+          paths = sorted(set(re.findall(
+              r'\$\{SRC\}/([A-Za-z0-9_./+-]+\.(?:cpp|cxx|cc|c))(?=[\s)])',
+              cmake
+          )))
 
-      missing = []
-      for rel in paths:
-          if not (root / "code" / rel).is_file():
-              missing.append(rel)
+          missing = []
+          for rel in paths:
+              if not (root / "code" / rel).is_file():
+                  missing.append(rel)
 
-      if missing:
-          for path in missing:
-              print("MISSING:", path)
-          print(f"\nTotal missing files: {len(missing)}")
-      else:
-          print("All explicitly referenced source files exist.")
-      PY
+          if missing:
+              for path in missing:
+                  print("MISSING:", path)
+              print(f"\nTotal missing files: {len(missing)}")
+          else:
+              print("All explicitly referenced source files exist.")
+          PY
 
-      echo "=== Upstream commit ==="
-      git -C openmohaa log -1 --oneline
+          echo "=== Upstream commit ==="
+          git -C openmohaa log -1 --oneline
 
-      echo "=== Sound header definitions ==="
-      grep -nE 'NO_MODERN_DMA|MAX_SOUNDSYSTEM_CHANNELS_3D|typedef struct.*sfx_info|DEFAULT_SFX_NUMBER_PLAYING|S_Driver_Init' \
-        openmohaa/code/client/snd_local.h \
-        openmohaa/code/client/snd_local_new.h \
-        openmohaa/code/client/new/snd_local_new.h || true
+          echo "=== Sound header definitions ==="
+          grep -nE 'NO_MODERN_DMA|MAX_SOUNDSYSTEM_CHANNELS_3D|typedef struct.*sfx_info|DEFAULT_SFX_NUMBER_PLAYING|S_Driver_Init' \
+            openmohaa/code/client/snd_local.h \
+            openmohaa/code/client/snd_local_new.h \
+            openmohaa/code/client/new/snd_local_new.h || true
 
-      echo "=== NO_MODERN_DMA references in build configuration ==="
-      grep -Rn 'NO_MODERN_DMA' nx cmake openmohaa/cmake \
-        --include='CMakeLists.txt' --include='*.cmake' || true
+          echo "=== NO_MODERN_DMA references in build configuration ==="
+          grep -Rn 'NO_MODERN_DMA' nx cmake openmohaa/cmake \
+            --include='CMakeLists.txt' --include='*.cmake' || true
 
-  - name: Verify Mumble exclusion
-    run: |
-      if grep -Rn "libmumblelink.c" openmohaa/cmake nx; then
-        echo "ERROR: Mumble source reference still exists."
-        exit 1
-      fi
+      - name: Verify Mumble exclusion
+        run: |
+          if grep -Rn "libmumblelink.c" openmohaa/cmake nx; then
+            echo "ERROR: Mumble source reference still exists."
+            exit 1
+          fi
 
-      echo "Mumble source references are absent."
-      rm -rf build
+          echo "Mumble source references are absent."
+          rm -rf build
 
-  - name: Configure OpenMoHAA for Nintendo Switch
-    run: |
-      echo "Checking upstream source tree..."
-      test -f "$GITHUB_WORKSPACE/openmohaa/code/sys/sys_main.c"
-      echo "Upstream sources found"
+      - name: Configure OpenMoHAA for Nintendo Switch
+        run: |
+          echo "Checking upstream source tree..."
+          test -f "$GITHUB_WORKSPACE/openmohaa/code/sys/sys_main.c"
+          echo "Upstream sources found"
 
-      cmake -S nx -B build \
-        -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/devkita64-libnx.cmake \
-        -DOPENMOHAA_ROOT="$GITHUB_WORKSPACE/openmohaa" \
-        -DNX_TARGET_GAME=1 \
-        -DNX_RENDERER=gl1 \
-        -DNX_ENABLE_NXLINK=OFF \
-        -DNX_USE_CODEC_MAD=ON
+          cmake -S nx -B build \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/devkita64-libnx.cmake \
+            -DOPENMOHAA_ROOT="$GITHUB_WORKSPACE/openmohaa" \
+            -DNX_TARGET_GAME=1 \
+            -DNX_RENDERER=gl1 \
+            -DNX_ENABLE_NXLINK=OFF \
+            -DNX_USE_CODEC_MAD=ON
 
-      echo "Configured source root:"
-      grep '^OPENMOHAA_ROOT:PATH=' build/CMakeCache.txt
+          echo "Configured source root:"
+          grep '^OPENMOHAA_ROOT:PATH=' build/CMakeCache.txt
 
-  - name: Diagnose Mumble source
-    run: |
-      echo "=== All CMake references ==="
-      grep -Rn "libmumblelink" nx openmohaa \
-        --include='CMakeLists.txt' \
-        --include='*.cmake' || true
+      - name: Diagnose Mumble source
+        run: |
+          echo "=== All CMake references ==="
+          grep -Rn "libmumblelink" nx openmohaa \
+            --include='CMakeLists.txt' \
+            --include='*.cmake' || true
 
-      echo "=== Source-list generation ==="
-      grep -RnE "GLOB_RECURSE|GLOB |CLIENT_LIBRARY_SOURCES|SOURCE_DIR.*/client" \
-        nx/CMakeLists.txt nx/cmake openmohaa/cmake \
-        --include='CMakeLists.txt' --include='*.cmake' || true
+          echo "=== Source-list generation ==="
+          grep -RnE "GLOB_RECURSE|GLOB |CLIENT_LIBRARY_SOURCES|SOURCE_DIR.*/client" \
+            nx/CMakeLists.txt nx/cmake openmohaa/cmake \
+            --include='CMakeLists.txt' --include='*.cmake' || true
 
-  - name: Build
-    run: |
-      cmake --build build --parallel 2
+      - name: Build
+        run: |
+          cmake --build build --parallel 2
 
-  - name: Prepare artifact
-    run: |
-      mkdir -p artifact
-      cp build/openmohaa.nro artifact/openmohaa.nro
+      - name: Prepare artifact
+        run: |
+          mkdir -p artifact
+          cp build/openmohaa.nro artifact/openmohaa.nro
 
-  - name: Upload NRO
-    uses: actions/upload-artifact@v4
-    with:
-      name: openmohaa-switch-spearhead
-      path: artifact/openmohaa.nro
+      - name: Upload NRO
+        uses: actions/upload-artifact@v4
+        with:
+          name: openmohaa-switch-spearhead
+          path: artifact/openmohaa.nro
