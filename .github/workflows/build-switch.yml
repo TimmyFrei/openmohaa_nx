@@ -285,6 +285,11 @@ jobs:
           grep -RIn "mumble_link\|mumble_update_coordinates\|mumble_unlink" openmohaa/code/client
           grep -RIn "USE_MUMBLE" nx openmohaa/code
           grep -RIn "libmumblelink.c" nx openmohaa/code --include="CMakeLists.txt" --include="*.cmake"
+          echo "=== Where libmumblelink is added ==="
+          grep -RIn "libmumblelink" nx openmohaa --include="CMakeLists.txt" --include="*.cmake" --include="*.txt" || true
+
+          echo "=== Source list definitions ==="
+          grep -n -E "COMMON_SOURCES|CLIENT_SOURCES|SYSTEM_SOURCES|RENDERER_SOURCES" nx/CMakeLists.txt
           cmake --build build --parallel 2
 
       - name: Prepare artifact
