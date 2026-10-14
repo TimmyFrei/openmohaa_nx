@@ -137,16 +137,14 @@ jobs:
 
       - name: Diagnose Mumble source
         run: |
-          echo "=== Mumble source in generated build files ==="
-          grep -RIn "libmumblelink.c" build \
-            --include="build.make" \
-            --include="DependInfo.cmake" || true
+          echo "=== References in upstream CMake files ==="
+          grep -Rn "libmumblelink.c" openmohaa/cmake openmohaa/CMakeLists.txt || true
 
-          echo "=== Mumble references in CMake files ==="
-          grep -RIn "libmumblelink" nx openmohaa \
-            --include="CMakeLists.txt" \
-            --include="*.cmake" \
-            --include="*.txt" || true
+          echo "=== References in generated build files ==="
+          grep -Rn "libmumblelink.c" build/CMakeFiles/openmohaa.dir || true
+
+          echo "=== CMake source list ==="
+          grep -Rn "libmumblelink.c" build/CMakeFiles/openmohaa.dir/DependInfo.cmake build/CMakeFiles/openmohaa.dir/build.make || true
 
       - name: Build
         run: |
