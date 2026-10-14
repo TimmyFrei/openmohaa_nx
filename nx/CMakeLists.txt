@@ -323,6 +323,7 @@ file(GLOB CLIENT_SOURCES
 
 list(FILTER CLIENT_SOURCES EXCLUDE REGEX "/libmumblelink\\.c$")
 list(FILTER CLIENT_SOURCES EXCLUDE REGEX "/snd_adpcm\\.c$")
+list(FILTER CLIENT_SOURCES EXCLUDE REGEX "/snd_dma\\.c$")
 
 # =============================================================================
 # Renderer
