@@ -118,6 +118,16 @@ jobs:
           echo "=== Upstream commit ==="
           git -C openmohaa log -1 --oneline
 
+      - name: Verify Mumble exclusion
+        run: |
+          if grep -Rn "libmumblelink.c" openmohaa/cmake nx; then
+            echo "ERROR: Mumble source reference still exists."
+            exit 1
+          fi
+
+          echo "Mumble source references are absent."
+          rm -rf build
+
       - name: Configure OpenMoHAA for Nintendo Switch
         run: |
           echo "Checking upstream source tree..."
