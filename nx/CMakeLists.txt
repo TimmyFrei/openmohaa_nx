@@ -321,6 +321,8 @@ file(GLOB CLIENT_SOURCES
     "${SRC}/client/*.c"
 )
 
+list(FILTER CLIENT_SOURCES EXCLUDE REGEX "/libmumblelink\\.c$")
+
 # =============================================================================
 # Renderer
 # =============================================================================
