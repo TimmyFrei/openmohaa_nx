@@ -27,6 +27,29 @@ jobs:
           path: openmohaa
           fetch-depth: 0
 
+  
+      - name: Disable Mumble Link on Switch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("openmohaa/cmake/client.cmake")
+          lines = p.read_text().splitlines(keepends=True)
+
+          needle = "${SOURCE_DIR}/client/libmumblelink.c"
+          matched = [line for line in lines if needle in line]
+
+          if len(matched) != 2:
+              raise SystemExit(
+                  f"Expected 2 Mumble source entries, found {len(matched)}"
+              )
+
+          lines = [line for line in lines if needle not in line]
+          p.write_text("".join(lines))
+
+          print("Removed both Mumble source entries for Nintendo Switch.")
+          PY
+
       - name: Patch IPv6 compatibility for Switch
         run: |
           cd openmohaa
