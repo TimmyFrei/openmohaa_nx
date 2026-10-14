@@ -316,12 +316,15 @@ file(GLOB COMMON_SOURCES CONFIGURE_DEPENDS
 # Client sources
 # =============================================================================
 
+
 file(GLOB CLIENT_SOURCES
     "${SRC}/client/*.cpp"
     "${SRC}/client/*.c"
 )
 
+# Exclude legacy sound implementation and unsupported Mumble integration.
 list(FILTER CLIENT_SOURCES EXCLUDE REGEX "/libmumblelink\\.c$")
+list(FILTER CLIENT_SOURCES EXCLUDE REGEX "/snd_main\\.c$")
 list(FILTER CLIENT_SOURCES EXCLUDE REGEX "/snd_adpcm\\.c$")
 list(FILTER CLIENT_SOURCES EXCLUDE REGEX "/snd_dma\\.c$")
 
@@ -542,7 +545,6 @@ target_compile_definitions(openmohaa PRIVATE
     WITH_SCRIPT_ENGINE
 
     NX_TARGET_GAME=${NX_TARGET_GAME}
-    NO_MODERN_DMA=1
 )
 
 if(NX_USE_CODEC_MAD)
