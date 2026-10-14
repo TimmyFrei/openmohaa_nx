@@ -542,6 +542,7 @@ target_compile_definitions(openmohaa PRIVATE
     WITH_SCRIPT_ENGINE
 
     NX_TARGET_GAME=${NX_TARGET_GAME}
+    NO_MODERN_DMA=1
 )
 
 if(NX_USE_CODEC_MAD)
